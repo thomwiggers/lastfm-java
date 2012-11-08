@@ -26,15 +26,33 @@
 	</licenses>
 
 	<scm>
-		<connection>scm:git:https://code.google.com/p/lastfm-java</connection>
-		<developerConnection>scm:git:https://code.google.com/p/lastfm-java</developerConnection>
-		<url>http://code.google.com/p/lastfm-java/</url>
+		<connection>scm:git:https://github.com/theguyofdoom/lastfm-java.git</connection>
+        <developerConnection>scm:git:https://github.com/theguyofdoom/lastfm-java.git</developerConnection>
+        <url>http://github.com/theguyofdoom/lastfm-java/</url>
 	</scm>
 
 	<developers>
 		<developer>
 			<name>Janni Kovacs</name>
 			<email>jannikovacs@gmail.com</email>
-		</developer>
-	</developers>
+        </developer>
+        <developer>
+          <name>Thom Wiggers</name>
+          <email>thom@thomwiggers.nl</email>
+        </developer>
+      </developers>
+
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>2.5.1</version>
+            <configuration>
+              <source>1.5</source>
+              <target>1.5</target>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+
 </project>
