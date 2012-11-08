@@ -55,6 +55,7 @@ public abstract class MusicEntry extends ImageHolder {
 	protected int listeners;
 	protected boolean streamable;
 	protected String id;
+    protected boolean loved;
 
 	/**
 	 * This property is only available on hype charts, like {@link Chart#getHypedArtists(String)} or {@link
@@ -109,6 +110,10 @@ public abstract class MusicEntry extends ImageHolder {
 	public boolean isStreamable() {
 		return streamable;
 	}
+
+    public boolean isLoved() {
+        return loved;
+    }
 
 	public String getUrl() {
 		return url;
@@ -205,6 +210,8 @@ public abstract class MusicEntry extends ImageHolder {
 		// streamable
 		String s = element.getChildText("streamable");
 		boolean streamable = s != null && s.length() != 0 && Integer.parseInt(s) == 1;
+        String l = element.getChildText("loved");
+        boolean loved = l != null && s.length() != 0 && Integer.parseInt(l) == 1 ;
 		// copy
 		entry.name = element.getChildText("name");
 		entry.url = element.getChildText("url");
@@ -213,6 +220,7 @@ public abstract class MusicEntry extends ImageHolder {
 		entry.userPlaycount = userPlaycount;
 		entry.listeners = listeners;
 		entry.streamable = streamable;
+        entry.loved = loved;
 		// tags
 		DomElement tags = element.getChild("tags");
 		if (tags == null)
