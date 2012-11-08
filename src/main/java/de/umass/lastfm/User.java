@@ -169,14 +169,19 @@ public class User extends ImageHolder {
 	}
 
 	public static PaginatedResult<Track> getRecentTracks(String user, String apiKey) {
-		return getRecentTracks(user, 1, 10, apiKey);
+		return getRecentTracks(user, 1, 10, false, apiKey);
 	}
 
-	public static PaginatedResult<Track> getRecentTracks(String user, int page, int limit, String apiKey) {
+    public static PaginatedResult<Track> getRecentTracks(String user, int page, int limit, String apiKey) {
+        return getRecentTracks(user, page, limit, false, apiKey);
+    }
+
+	public static PaginatedResult<Track> getRecentTracks(String user, int page, int limit, boolean extended, String apiKey) {
 		Map<String, String> params = new HashMap<String, String>();
 		params.put("user", user);
 		params.put("limit", String.valueOf(limit));
 		params.put("page", String.valueOf(page));
+        params.put("extended", String.valueOf(extended));
 		Result result = Caller.getInstance().call("user.getRecentTracks", apiKey, params);
 		return ResponseBuilder.buildPaginatedResult(result, Track.class);
 	}
