@@ -3,8 +3,7 @@
  */
 package de.umass.lastfm;
 
-import static org.junit.Assert.assertFalse;
-
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -18,9 +17,13 @@ public class UserTest {
      */
     @Test
     public void testGetRecentTracksStringString() {
+	// random user with privacy set
 	final PaginatedResult<Track> res = User.getRecentTracks("MacGyverNL",
 		PrivateKeys.APIKEY);
-	assertFalse(res.getResult().isSuccessful());
+	Assert.assertFalse(res.getResult().isSuccessful());
+	Assert.assertEquals(
+		"This user has made their recent tracks private. Only they can access them with an authenticated session",
+		res.getResult().getErrorMessage());
     }
 
 }
