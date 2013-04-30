@@ -4,4 +4,4 @@
 *.iws
 *.ipr
 
-target
+targetsrc/test/java/de/umass/lastfm/PrivateKeys.java
