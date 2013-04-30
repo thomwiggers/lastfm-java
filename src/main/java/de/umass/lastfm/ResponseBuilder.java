@@ -40,83 +40,94 @@ import de.umass.xml.DomElement;
  */
 public final class ResponseBuilder {
 
-	private ResponseBuilder() {
+    private ResponseBuilder() {
+    }
+
+    private static <T> ItemFactory<T> getItemFactory(final Class<T> itemClass) {
+	return ItemFactoryBuilder.getFactoryBuilder().getItemFactory(itemClass);
+    }
+
+    public static <T> Collection<T> buildCollection(final Result result, final Class<T> itemClass) {
+	return buildCollection(result, getItemFactory(itemClass));
+    }
+
+    public static <T> Collection<T> buildCollection(final Result result, final ItemFactory<T> factory) {
+	if (!result.isSuccessful())
+	    return Collections.emptyList();
+	return buildCollection(result.getContentElement(), factory);
+    }
+
+    public static <T> Collection<T> buildCollection(final DomElement element, final Class<T> itemClass) {
+	return buildCollection(element, getItemFactory(itemClass));
+    }
+
+    public static <T> Collection<T> buildCollection(final DomElement element, final ItemFactory<T> factory) {
+	if (element == null)
+	    return Collections.emptyList();
+	final Collection<DomElement> children = element.getChildren();
+	final Collection<T> items = new ArrayList<T>(children.size());
+	for (final DomElement child : children) {
+	    items.add(factory.createItemFromElement(child));
+	}
+	return items;
+    }
+
+    public static <T> PaginatedResult<T> buildPaginatedResult(final Result result, final Class<T> itemClass) {
+	return buildPaginatedResult(result, getItemFactory(itemClass));
+    }
+
+    public static <T> PaginatedResult<T> buildPaginatedResult(final Result result, final ItemFactory<T> factory) {
+	if (!result.isSuccessful())
+	    return new PaginatedResult<T>(0, 0, Collections.<T>emptyList());
+
+	final DomElement contentElement = result.getContentElement();
+	if (contentElement == null) { // TODO DEBUG
+	    System.err
+	    .println("r85: Suddenly, empty contentElement!\n Result toString:");
+	    System.err.println(result);
+	    System.err.println("Document: ");
+	    System.err.println(result.resultDocument.toString());
+	}
+	return buildPaginatedResult(contentElement, contentElement, factory);
+    }
+
+    public static <T> PaginatedResult<T> buildPaginatedResult(final DomElement contentElement, final DomElement childElement, final Class<T> itemClass) {
+	return buildPaginatedResult(contentElement, childElement, getItemFactory(itemClass));
+    }
+
+    public static <T> PaginatedResult<T> buildPaginatedResult(final DomElement contentElement, final DomElement childElement, final ItemFactory<T> factory) {
+	final Collection<T> items = buildCollection(childElement, factory);
+
+	if (contentElement == null) { // TODO DEBUG
+	    System.err.println("r 99: Suddenly, empty contentElement");
 	}
 
-	private static <T> ItemFactory<T> getItemFactory(Class<T> itemClass) {
-		return ItemFactoryBuilder.getFactoryBuilder().getItemFactory(itemClass);
+	String totalPagesAttribute = contentElement.getAttribute("totalPages");
+	if (totalPagesAttribute == null) {
+	    totalPagesAttribute = contentElement.getAttribute("totalpages");
 	}
 
-	public static <T> Collection<T> buildCollection(Result result, Class<T> itemClass) {
-		return buildCollection(result, getItemFactory(itemClass));
-	}
+	final int page = Integer.parseInt(contentElement.getAttribute("page"));
+	final int totalPages = Integer.parseInt(totalPagesAttribute);
 
-	public static <T> Collection<T> buildCollection(Result result, ItemFactory<T> factory) {
-		if (!result.isSuccessful())
-			return Collections.emptyList();
-		return buildCollection(result.getContentElement(), factory);
-	}
+	return new PaginatedResult<T>(page, totalPages, items);
+    }
 
-	public static <T> Collection<T> buildCollection(DomElement element, Class<T> itemClass) {
-		return buildCollection(element, getItemFactory(itemClass));
-	}
+    public static <T> T buildItem(final Result result, final Class<T> itemClass) {
+	return buildItem(result, getItemFactory(itemClass));
+    }
 
-	public static <T> Collection<T> buildCollection(DomElement element, ItemFactory<T> factory) {
-		if (element == null)
-			return Collections.emptyList();
-		Collection<DomElement> children = element.getChildren();
-		Collection<T> items = new ArrayList<T>(children.size());
-		for (DomElement child : children) {
-			items.add(factory.createItemFromElement(child));
-		}
-		return items;
-	}
+    public static <T> T buildItem(final Result result, final ItemFactory<T> factory) {
+	if (!result.isSuccessful())
+	    return null;
+	return buildItem(result.getContentElement(), factory);
+    }
 
-	public static <T> PaginatedResult<T> buildPaginatedResult(Result result, Class<T> itemClass) {
-		return buildPaginatedResult(result, getItemFactory(itemClass));
-	}
+    public static <T> T buildItem(final DomElement element, final Class<T> itemClass) {
+	return buildItem(element, getItemFactory(itemClass));
+    }
 
-	public static <T> PaginatedResult<T> buildPaginatedResult(Result result, ItemFactory<T> factory) {
-		if (!result.isSuccessful()) {
-			return new PaginatedResult<T>(0, 0, Collections.<T>emptyList());
-		}
-
-		DomElement contentElement = result.getContentElement();
-		return buildPaginatedResult(contentElement, contentElement, factory);
-	}
-
-	public static <T> PaginatedResult<T> buildPaginatedResult(DomElement contentElement, DomElement childElement, Class<T> itemClass) {
-		return buildPaginatedResult(contentElement, childElement, getItemFactory(itemClass));
-	}
-
-	public static <T> PaginatedResult<T> buildPaginatedResult(DomElement contentElement, DomElement childElement, ItemFactory<T> factory) {
-		Collection<T> items = buildCollection(childElement, factory);
-
-		String totalPagesAttribute = contentElement.getAttribute("totalPages");
-		if (totalPagesAttribute == null)
-			totalPagesAttribute = contentElement.getAttribute("totalpages");
-
-		int page = Integer.parseInt(contentElement.getAttribute("page"));
-		int totalPages = Integer.parseInt(totalPagesAttribute);
-
-		return new PaginatedResult<T>(page, totalPages, items);
-	}
-
-	public static <T> T buildItem(Result result, Class<T> itemClass) {
-		return buildItem(result, getItemFactory(itemClass));
-	}
-
-	public static <T> T buildItem(Result result, ItemFactory<T> factory) {
-		if (!result.isSuccessful())
-			return null;
-		return buildItem(result.getContentElement(), factory);
-	}
-
-	public static <T> T buildItem(DomElement element, Class<T> itemClass) {
-		return buildItem(element, getItemFactory(itemClass));
-	}
-
-	private static <T> T buildItem(DomElement element, ItemFactory<T> factory) {
-		return factory.createItemFromElement(element);
-	}
+    private static <T> T buildItem(final DomElement element, final ItemFactory<T> factory) {
+	return factory.createItemFromElement(element);
+    }
 }
