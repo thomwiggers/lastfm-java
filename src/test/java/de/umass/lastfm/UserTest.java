@@ -4,13 +4,20 @@
 package de.umass.lastfm;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
+import org.junit.Before;
 
 /**
  * @author Thom Wiggers
  *
  */
 public class UserTest {
+
+    @Before
+    public void preconditions() {
+      Assume.assumeTrue(!PrivateKeys.APIKEY.equals(""));
+    }
 
     /**
      * Test method for {@link de.umass.lastfm.User#getRecentTracks(java.lang.String, java.lang.String)}.
