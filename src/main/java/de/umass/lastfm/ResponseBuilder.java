@@ -78,7 +78,8 @@ public final class ResponseBuilder {
 
     public static <T> PaginatedResult<T> buildPaginatedResult(final Result result, final ItemFactory<T> factory) {
 	if (!result.isSuccessful())
-	    return new PaginatedResult<T>(0, 0, Collections.<T>emptyList());
+	    return new PaginatedResult<T>(0, 0, Collections.<T> emptyList(),
+		    result);
 
 	final DomElement contentElement = result.getContentElement();
 	if (contentElement == null) { // TODO DEBUG
@@ -88,14 +89,16 @@ public final class ResponseBuilder {
 	    System.err.println("Document: ");
 	    System.err.println(result.resultDocument.toString());
 	}
-	return buildPaginatedResult(contentElement, contentElement, factory);
+	return buildPaginatedResult(result, contentElement, contentElement,
+		factory);
     }
 
-    public static <T> PaginatedResult<T> buildPaginatedResult(final DomElement contentElement, final DomElement childElement, final Class<T> itemClass) {
-	return buildPaginatedResult(contentElement, childElement, getItemFactory(itemClass));
+    public static <T> PaginatedResult<T> buildPaginatedResult(final Result result, final DomElement contentElement, final DomElement childElement, final Class<T> itemClass) {
+	return buildPaginatedResult(result, contentElement, childElement,
+		getItemFactory(itemClass));
     }
 
-    public static <T> PaginatedResult<T> buildPaginatedResult(final DomElement contentElement, final DomElement childElement, final ItemFactory<T> factory) {
+    public static <T> PaginatedResult<T> buildPaginatedResult(final Result result, final DomElement contentElement, final DomElement childElement, final ItemFactory<T> factory) {
 	final Collection<T> items = buildCollection(childElement, factory);
 
 	if (contentElement == null) { // TODO DEBUG
@@ -110,7 +113,7 @@ public final class ResponseBuilder {
 	final int page = Integer.parseInt(contentElement.getAttribute("page"));
 	final int totalPages = Integer.parseInt(totalPagesAttribute);
 
-	return new PaginatedResult<T>(page, totalPages, items);
+	return new PaginatedResult<T>(page, totalPages, items, result);
     }
 
     public static <T> T buildItem(final Result result, final Class<T> itemClass) {

@@ -38,54 +38,69 @@ import java.util.Iterator;
  */
 public class PaginatedResult<T> implements Iterable<T> {
 
-	private int page;
-	private int totalPages;
-	private Collection<T> pageResults;
+    private int page;
+    private int totalPages;
+    private Collection<T> pageResults;
+    private final Result result;
 
-	PaginatedResult(int page, int totalPages, Collection<T> pageResults) {
-		this.page = page;
-		this.totalPages = totalPages;
-		this.pageResults = pageResults;
-	}
+    PaginatedResult(final int page, final int totalPages,
+	    final Collection<T> pageResults, final Result result) {
+	this.page = page;
+	this.totalPages = totalPages;
+	this.pageResults = pageResults;
+	this.result = result;
+    }
 
-	/**
-	 * Returns the page number of this result.
-	 *
-	 * @return page number
-	 */
-	public int getPage() {
-		return page;
-	}
+    PaginatedResult(final int page, final int totalPages,
+	    final Collection<T> pageResults) {
+	this(page, totalPages, pageResults, null);
+    }
 
-	/**
-	 * Returns a list of entries of the type <code>T</code> for this page.
-	 *
-	 * @return page results
-	 */
-	public Collection<T> getPageResults() {
-		return pageResults;
-	}
+    /**
+     * Returns the page number of this result.
+     *
+     * @return page number
+     */
+    public int getPage() {
+	return page;
+    }
 
-	/**
-	 * Returns the total number of pages available.
-	 *
-	 * @return total pages
-	 */
-	public int getTotalPages() {
-		return totalPages;
-	}
+    /**
+     * Returns a list of entries of the type <code>T</code> for this page.
+     *
+     * @return page results
+     */
+    public Collection<T> getPageResults() {
+	return pageResults;
+    }
 
-	/**
-	 * Returns <code>true</code> if this Result contains no elements, which is the case for service calls that would have returned a
-	 * <code>PaginatedResult</code> but fail.
-	 *
-	 * @return <code>true</code> if this result contains no elements
-	 */
-	public boolean isEmpty() {
-		return pageResults == null || pageResults.isEmpty();
-	}
+    /**
+     * Returns the total number of pages available.
+     *
+     * @return total pages
+     */
+    public int getTotalPages() {
+	return totalPages;
+    }
 
-	public Iterator<T> iterator() {
-		return getPageResults().iterator();
-	}
+    /**
+     * Returns <code>true</code> if this Result contains no elements, which is the case for service calls that would have returned a
+     * <code>PaginatedResult</code> but fail.
+     *
+     * @return <code>true</code> if this result contains no elements
+     */
+    public boolean isEmpty() {
+	return pageResults == null || pageResults.isEmpty();
+    }
+
+    public Iterator<T> iterator() {
+	return getPageResults().iterator();
+    }
+
+    /**
+     * @return the result of the initial request
+     */
+    public Result getResult() {
+	return result;
+    }
 }
