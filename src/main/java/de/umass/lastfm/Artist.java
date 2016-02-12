@@ -129,19 +129,20 @@ public class Artist extends MusicEntry {
 	 * @see #getSimilar(String, int, String)
 	 */
 	public static Collection<Artist> getSimilar(String artist, String apiKey) {
-		return getSimilar(artist, 100, apiKey);
+		return getSimilar(artist, 100, false, apiKey);
 	}
 
 	/**
 	 * Returns <code>limit</code> similar artists to the given one.
 	 *
 	 * @param artist Artist's name
-	 * @param limit Number of maximum results
+	 * @param limit Limit the number of similar artists returned
+	 * @param autoCorrect Transform misspelled artist names into correct artist names, returning the correct version instead. The corrected artist name will be returned in the response
 	 * @param apiKey The API key
 	 * @return similar artists
 	 */
-	public static Collection<Artist> getSimilar(String artist, int limit, String apiKey) {
-		Result result = Caller.getInstance().call("artist.getSimilar", apiKey, "artist", artist, "limit", String.valueOf(limit));
+	public static Collection<Artist> getSimilar(String artist, int limit, boolean autoCorrect, String apiKey) {
+		Result result = Caller.getInstance().call("artist.getSimilar", apiKey, "artist", artist, "limit", String.valueOf(limit), "autocorrect", autoCorrect ? "1" : "0");
 		return ResponseBuilder.buildCollection(result, Artist.class);
 	}
 
@@ -207,6 +208,20 @@ public class Artist extends MusicEntry {
 	 */
 	public static Collection<Track> getTopTracks(String artist, String apiKey) {
 		Result result = Caller.getInstance().call("artist.getTopTracks", apiKey, "artist", artist);
+		return ResponseBuilder.buildCollection(result, Track.class);
+	}
+
+	/**
+	 * Get the top tracks by an artist on Last.fm, ordered by popularity
+	 *
+	 * @param artist The artist name in question
+	 * @param apiKey A Last.fm API key.
+	 * @param limit The number of results to fetch per page.
+	 * @param autoCorrect Transform misspelled artist names into correct artist names, returning the correct version instead. The corrected artist name will be returned in the response.
+	 * @return list of top tracks
+	 */
+	public static Collection<Track> getTopTracks(String artist, int limit, boolean autoCorrect, String apiKey) {
+		Result result = Caller.getInstance().call("artist.getTopTracks", apiKey, "artist", artist, "limit", String.valueOf(limit), "autocorrect", autoCorrect ? "1" : "0");
 		return ResponseBuilder.buildCollection(result, Track.class);
 	}
 
