@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import de.umass.lastfm.LastFmException;
 import de.umass.lastfm.scrobble.IgnoredMessageCode;
 import de.umass.lastfm.scrobble.ScrobbleData;
 import de.umass.lastfm.scrobble.ScrobbleResult;
@@ -441,6 +442,45 @@ public class Track extends MusicEntry {
 	}
 
 	/**
+	 * Get the metadata for a track on Last.fm using the artist/track name or a musicbrainz id.
+	 *
+	 * @param artist The artist name in question or <code>null</code> if an mbid is specified
+	 * @param trackOrMbid The track name in question or the musicbrainz id for the track
+	 * @param username The username for the context of the request, or <code>null</code>. If supplied, the user's playcount for this track and whether they have loved the track is included in the response
+	 * @param autocorrect Transform misspelled artist and track names into correct artist and track names, returning the correct version instead. The corrected artist and track name will be returned in the response
+	 * @param apiKey A Last.fm API key.
+	 * @return Track information
+	 */
+	public static Track getInfo(String artist, String trackOrMbid, String username, boolean autoCorrect, String apiKey) {
+		Map<String, String> params = new HashMap<String, String>();
+		if (StringUtilities.isMbid(trackOrMbid)) {
+			params.put("mbid", trackOrMbid);
+		} else {
+			params.put("artist", artist);
+			params.put("track", trackOrMbid);
+		}
+		params.put("autocorrect", autoCorrect ? "1" : "0");
+		MapUtilities.nullSafePut(params, "username", username);
+		Result result = Caller.getInstance().call("track.getInfo", apiKey, params);
+		if (!result.isSuccessful()) {
+			throw new LastFmException(result.getErrorCode(), result.getErrorMessage());
+		}
+		DomElement content = result.getContentElement();
+		DomElement album = content.getChild("album");
+		Track track = FACTORY.createItemFromElement(content);
+		if (album != null) {
+			String pos = album.getAttribute("position");
+			if ((pos != null) && pos.length() != 0) {
+				track.position = Integer.parseInt(pos);
+			}
+			track.album = album.getChildText("title");
+			track.albumMbid = album.getChildText("mbid");
+			ImageHolder.loadImages(track, album);
+		}
+		return track;
+	}
+
+	/**
 	 * Get a list of Buy Links for a particular Track. It is required that you supply either the artist and track params or the mbid param.
 	 *
 	 * @param artist The artist name in question
@@ -701,11 +741,19 @@ public class Track extends MusicEntry {
 			if (element.hasChild("duration")) {
 				String duration = element.getChildText("duration");
 				if(duration.length() != 0) {
-					int durationLength = Integer.parseInt(duration);
-					// So it seems last.fm couldn't decide which format to send the duration in.
-					// It's supplied in milliseconds for Playlist.fetch and Track.getInfo but Artist.getTopTracks returns (much saner) seconds
-					// so we're doing a little sanity check for the duration to be over or under 10'000 and decide what to do
-					track.duration = durationLength > 10000 ? durationLength / 1000 : durationLength;
+					try {
+						int durationLength = Integer.parseInt(duration);
+						// So it seems last.fm couldn't decide which format to send the duration in.
+						// It's supplied in milliseconds for Playlist.fetch and Track.getInfo but Artist.getTopTracks returns (much saner) seconds
+						// so we're doing a little sanity check for the duration to be over or under 10'000 and decide what to do
+						track.duration = durationLength > 10000 ? durationLength / 1000 : durationLength;
+					} catch (NumberFormatException nfe) {
+						if (duration == null || (duration != null && !"FIXME".equals(duration))) {
+							System.out.println(String.format("Failed to parse last.fm track duration [%s]", duration));
+							nfe.printStackTrace();
+						}
+						track.duration = -1;
+					}
 				}
 			}
 			DomElement album = element.getChild("album");
