@@ -645,8 +645,14 @@ public class User extends ImageHolder {
 				}
 			}
 			if (element.hasChild("registered")) {
-				String unixtime = element.getChild("registered").getAttribute("unixtime");
-				user.registeredDate = new Date(Long.parseLong(unixtime) * 1000);
+				try {
+					String unixtime = element.getChild("registered").getAttribute("unixtime");
+					if (unixtime != null) {
+						user.registeredDate = new Date(Long.parseLong(unixtime) * 1000);
+					}
+				} catch (NumberFormatException e) {
+					// no registration date
+				}
 			}
 			return user;
 		}
