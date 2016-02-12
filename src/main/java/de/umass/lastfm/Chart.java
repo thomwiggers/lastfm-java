@@ -37,6 +37,7 @@ import de.umass.xml.DomElement;
  * @author Janni Kovacs
  */
 public class Chart<T extends MusicEntry> {
+	private static final int DEFAULT_PAGE_SIZE = 50;
 
 	private Date from, to;
 	private Collection<T> entries;
@@ -194,6 +195,19 @@ public class Chart<T extends MusicEntry> {
 	}
 
 	/**
+	 * Get the top artists chart.
+	 *
+	 * @param page The page to fetch
+	 * @param limit The number of results to fetch per page
+	 * @param apiKey A Last.fm API key
+	 * @return Top artists chart
+	 */
+	public static PaginatedResult<Artist> getTopArtists(int page, int limit, String apiKey) {
+		Result result = Caller.getInstance().call("chart.getTopArtists", apiKey, "page", String.valueOf(page), "limit", String.valueOf(limit));
+		return ResponseBuilder.buildPaginatedResult(result, Artist.class);
+	}
+
+	/**
 	 * Get the top tags chart.
 	 *
 	 * @param apiKey A Last.fm API key
@@ -234,6 +248,19 @@ public class Chart<T extends MusicEntry> {
 	 */
 	public static PaginatedResult<Track> getTopTracks(int page, String apiKey) {
 		Result result = Caller.getInstance().call("chart.getTopTracks", apiKey, "page", String.valueOf(page));
+		return ResponseBuilder.buildPaginatedResult(result, Track.class);
+	}
+
+	/**
+	 * Get the top tracks chart.
+	 *
+	 * @param page The page to fetch
+	 * @param limit The number of results to fetch per page
+	 * @param apiKey A Last.fm API key
+	 * @return Top tracks chart
+	 */
+	public static PaginatedResult<Track> getTopTracks(int page, int limit, String apiKey) {
+		Result result = Caller.getInstance().call("chart.getTopTracks", apiKey, "page", String.valueOf(page), "limit", String.valueOf(limit));
 		return ResponseBuilder.buildPaginatedResult(result, Track.class);
 	}
 
