@@ -194,6 +194,19 @@ public class Geo {
 	}
 
 	/**
+	 * Get the most popular artists on Last.fm by country
+	 *
+	 * @param country A country name, as defined by the ISO 3166-1 country names standard
+	 * @param limit The number of results to fetch per page
+	 * @param apiKey A Last.fm API key.
+	 * @return list of Artists
+	 */
+	public static Collection<Artist> getTopArtists(String country, int limit, String apiKey) {
+		Result result = Caller.getInstance().call("geo.getTopArtists", apiKey, "country", country, "limit", String.valueOf(limit));
+		return ResponseBuilder.buildCollection(result, Artist.class);
+	}
+
+	/**
 	 * Get the most popular tracks on Last.fm by country
 	 *
 	 * @param country A country name, as defined by the ISO 3166-1 country names standard
@@ -202,6 +215,19 @@ public class Geo {
 	 */
 	public static Collection<Track> getTopTracks(String country, String apiKey) {
 		Result result = Caller.getInstance().call("geo.getTopTracks", apiKey, "country", country);
+		return ResponseBuilder.buildCollection(result, Track.class);
+	}
+
+	/**
+	 * Get the most popular tracks on Last.fm by country
+	 *
+	 * @param country A country name, as defined by the ISO 3166-1 country names standard
+	 * @param limit The number of results to fetch per page
+	 * @param apiKey A Last.fm API key.
+	 * @return a list of Tracks
+	 */
+	public static Collection<Track> getTopTracks(String country, int limit, String apiKey) {
+		Result result = Caller.getInstance().call("geo.getTopTracks", apiKey, "country", country, "limit", String.valueOf(limit));
 		return ResponseBuilder.buildCollection(result, Track.class);
 	}
 
