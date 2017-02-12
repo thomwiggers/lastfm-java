@@ -30,12 +30,16 @@ import static de.umass.util.StringUtilities.encode;
 import static de.umass.util.StringUtilities.map;
 import static de.umass.util.StringUtilities.md5;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
@@ -56,6 +60,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import de.umass.lastfm.Result.Status;
 import de.umass.lastfm.cache.Cache;
@@ -250,21 +255,22 @@ public class Caller {
 		    return lastResult;
 		} else {
 		    if (cache != null) {
-			long expires = urlConnection.getHeaderFieldDate("Expires", -1);
-			if (expires == -1) {
-			    expires = cache.findExpirationDate(method, params);
-			}
-			if (expires != -1) {
-			    cache.store(cacheEntryName, inputStream, expires); // if data wasn't cached store new result
-			    inputStream = cache.load(cacheEntryName);
-			    if (inputStream == null)
-				throw new CallException("Caching/Reloading failed");
-			}
+				long responseExpirationDate = urlConnection.getHeaderFieldDate("Expires", -1);
+				long policyExpirationDate = cache.findExpirationDate(method, params);
+				long expires = Math.max(responseExpirationDate, policyExpirationDate);
+				if (expires > System.currentTimeMillis()) {
+				    cache.store(cacheEntryName, inputStream, expires); // if data wasn't cached store new result
+				    inputStream = cache.load(cacheEntryName);
+				    if (inputStream == null)
+					throw new CallException("Caching/Reloading failed");
+				}
 		    }
 		}
 	    } catch (final IOException e) {
 		throw new CallException(e);
 	    }
+	} else {
+		log.info(String.format("Last.fm data retrieved from cache for method [%s] with params %s", method, params));
 	}
 
 	try {
@@ -334,8 +340,68 @@ public class Caller {
 	return null;
     }
 
+	// XML 1.0
+	// #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+	private static final String xml10pattern = "[^"
+		+ "\u0009\r\n"
+		+ "\u0020-\uD7FF"
+		+ "\uE000-\uFFFD"
+		+ "\ud800\udc00-\udbff\udfff"
+		+ "]";
+
+	// XML 1.1
+	// [#x1-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF]
+	private static final String xml11pattern = "[^"
+		+ "\u0001-\uD7FF"
+		+ "\uE000-\uFFFD"
+		+ "\ud800\udc00-\udbff\udfff"
+		+ "]+";
+
+	private static String removeInvalidXMLCharacters(final String xml) {
+		if (xml == null || xml.length() <= 0) {
+			return xml;
+		}
+		String invalidCharsReplacePattern = null;
+		if (xml.startsWith("<?xml version=\"1.1\"")) {
+			invalidCharsReplacePattern = xml11pattern;
+		} else {
+			invalidCharsReplacePattern = xml10pattern;
+		}
+		return xml.replaceAll(invalidCharsReplacePattern, "");
+	}
+    private String readInputStreamToString(final InputStream inputStream) throws IOException {
+    	final char[] buffer = new char[8 * 1024];
+        final StringBuilder out = new StringBuilder();
+        Reader in = null;
+        try {
+        	in = new InputStreamReader(inputStream, "UTF-8");
+            for (;;) {
+                int rsz = in.read(buffer, 0, buffer.length);
+                if (rsz < 0)
+                    break;
+                out.append(buffer, 0, rsz);
+            }
+        } finally {
+        	if (in != null) {
+        		in.close();
+        	}
+        }
+        return out.toString();
+    }
     private Result createResultFromInputStream(final InputStream inputStream) throws SAXException, IOException {
-	final Document document = newDocumentBuilder().parse(new InputSource(new InputStreamReader(inputStream, "UTF-8")));
+    final String xml = readInputStreamToString(inputStream);
+	Document document = null;
+	try {
+		document = newDocumentBuilder().parse(new InputSource(new StringReader(xml)));
+	} catch (SAXParseException spe) {
+		String errorMessage = spe.getMessage();
+		if (errorMessage != null && errorMessage.startsWith("An invalid XML character ")) {
+			String fixedXml = removeInvalidXMLCharacters(xml);
+			document = newDocumentBuilder().parse(new InputSource(new StringReader(fixedXml)));
+		} else {
+			throw spe;
+		}
+	}
 	final Element root = document.getDocumentElement(); // lfm element
 	final String statusString = root.getAttribute("status");
 	final Status status = "ok".equals(statusString) ? Status.OK : Status.FAILED;
